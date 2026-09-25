@@ -23,7 +23,7 @@ export default `<!doctype html>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/styles.css?v={{V}}">
 <script type="application/ld+json">{{JSONLD}}</script>
 </head>
 <body class="map-page" data-lat="{{LAT}}" data-lng="{{LNG}}" data-zoom="{{ZOOM}}" data-area="{{AREA_SLUG}}" data-area-r="{{AREA_R}}"
@@ -79,8 +79,8 @@ export default `<!doctype html>
   </aside>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="/app.js"></script>
-<script src="/ads.js" defer></script>
+<script src="/app.js?v={{V}}"></script>
+<script src="/ads.js?v={{V}}" defer></script>
 </body>
 </html>
 `;

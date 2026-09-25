@@ -1,5 +1,6 @@
 // Server-side rendering so search engines see real content (call lists, area names) without running JS.
 import tpl from './template.js';
+import V from './asset-version.js';
 import { ADSENSE_CLIENT, ADSENSE_SLOT, SITE_NAME, BASE_URL, AREAS, ACTIVE_WINDOW_MIN, POLL_MINUTES, TILE_URL, TILE_ATTRIBUTION, miles } from './config.js';
 
 
@@ -48,7 +49,7 @@ export function renderPage({ calls, area }) {
     AREA_LINKS: areaLinks, AREA_SLUG: esc(area?.slug || ''), AREA_R: String(area?.r || 0),
     LAT: String(area?.lat ?? 28.5100), LNG: String(area?.lng ?? -81.3600), ZOOM: String(area?.zoom ?? 11),
     JSONLD: JSON.stringify(jsonld).replace(/</g, '\\u003c'),
-    AD_CLIENT: esc(ADSENSE_CLIENT), AD_SLOT: esc(ADSENSE_SLOT),
+    V: esc(V), AD_CLIENT: esc(ADSENSE_CLIENT), AD_SLOT: esc(ADSENSE_SLOT),
     TILE_URL: esc(TILE_URL), TILE_ATTR: esc(TILE_ATTRIBUTION),
     WINDOW_MIN: String(ACTIVE_WINDOW_MIN), POLL_MIN: String(POLL_MINUTES),
     UPDATED_ISO: new Date(now).toISOString(), UPDATED: fmt(now), BASE_URL: esc(BASE_URL),

@@ -73,6 +73,10 @@ h2 { font: 600 1.35rem/1.15 var(--display); margin: 0 0 8px; }
 .notes ul { margin: 0; padding-left: 1.1em; }
 .notes li { color: var(--muted); font-size: .92rem; margin-bottom: 8px; max-width: 62ch; }
 .notes li::marker { color: var(--citrus); }
+.ad-slot { margin: 0 0 28px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.ad-label { margin: 0 0 8px; font-size: .75rem; color: var(--muted); }
+.ad-box { min-height: 100px; }
+.ad-note { margin: 8px 0 0; font-size: .82rem; color: var(--muted); }
 .pitch { background: var(--lake-2); border-left: 4px solid var(--citrus); padding: 16px; margin: 0 0 28px; border-radius: 0 8px 8px 0; }
 .pitch p { margin: 0 0 12px; color: var(--muted); }
 .areas ul { list-style: none; padding: 0; margin: 0 0 24px; display: flex; flex-wrap: wrap; gap: 4px 14px; }

@@ -55,6 +55,18 @@ To expand beyond city limits later, add another feed to `FEEDS` in `src/feeds.js
 
 **Wording matters.** The site calls this "support," not "donations," and says it isn't tax-deductible, because supporters receive alerts in return and the project isn't a registered nonprofit. Keep it that way unless you form a nonprofit. If you do, talk to an accountant about Florida's charitable-solicitation registration before asking for donations.
 
+## Advertising (Google AdSense)
+
+The map pages have one ad spot in the side panel, below the call list and notes. It's labeled "Advertisement," and there are no pop-ups and no ads on the map or between calls. Supporters never see it: finishing checkout or opening their manage link marks that browser as ad-free, and the ad script isn't loaded for them at all. If someone stops supporting, ads come back.
+
+1. Apply at adsense.google.com with your live domain. Approval can take from a few days to a few weeks and isn't guaranteed. Google reviews content, traffic and your Terms and Privacy pages.
+2. Once approved, create a **Display ad unit** (responsive). Copy the publisher ID (`ca-pub-...`) into `ADSENSE_CLIENT` and the ad unit's numeric ID into `ADSENSE_SLOT`, then redeploy. The build creates `/ads.txt` for you.
+3. In AdSense, leave **Auto ads off**. Auto ads would place more ads around the site, including over the map.
+4. In AdSense > Privacy & messaging, turn on Google's consent messages for Europe and for US state privacy laws. Google requires this before serving ads to those visitors.
+5. Consider blocking sensitive ad categories (for example dating or gambling) in AdSense > Blocking controls, since ads appear next to emergency calls.
+
+If the ad box never appears, open the browser console on the map page and look for "Content Security Policy" errors; ad hosts are allowed in `src/http.js`.
+
 ## Alert delivery
 
 - **Email:** any SMTP service (Postmark, Resend, SendGrid, Amazon SES). Set up SPF and DKIM on your domain so alerts don't land in spam.
@@ -93,3 +105,4 @@ npx netlify dev          # http://localhost:8888
 - [ ] Stripe live key, webhook and customer portal; minimum amount set
 - [ ] Email with SPF/DKIM; Twilio registration approved
 - [ ] Personal or Pro Netlify plan with auto-recharge on
+- [ ] AdSense approved, `ADSENSE_CLIENT`/`ADSENSE_SLOT` set, Auto ads off, consent messages on

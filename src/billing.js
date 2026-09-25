@@ -36,7 +36,7 @@ export async function activateFromSession(session) {
   if (!prev || prev.status !== 'active') {
     await sendEmail(sub.email, `Thanks for supporting ${SITE_NAME}`,
       `Thank you for supporting ${SITE_NAME}${sub.amount ? ` with $${sub.amount} a month` : ''}. Your alerts are on: you'll get one when a police, fire, medical or traffic call is dispatched inside your alert area.\n\n` +
-      `Save this link to change your address, radius or alert types, or to cancel your support:\n${BASE_URL}/manage/${token}\n\n` +
+      `Save this link to change your address, radius or alert types, or to cancel your support. Opening it on a phone or computer also turns off ads there:\n${BASE_URL}/manage/${token}\n\n` +
       `Alerts can be delayed by several minutes. In an emergency, call 9-1-1.`).catch(() => {});
   }
   await pendingStore().delete(pendingToken);

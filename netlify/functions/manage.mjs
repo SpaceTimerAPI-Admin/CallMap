@@ -1,7 +1,7 @@
 // GET/PUT /api/manage/:token and POST /api/manage/:token/billing. The token is the secret in the manage link.
 import { getSub, saveSub } from '../../src/store.js';
 import { stripe } from '../../src/billing.js';
-import { json, readJson } from '../../src/http.js';
+import { json, readJson, supporterCookie } from '../../src/http.js';
 import { normPhone, clampRadius, cleanCats } from '../../src/validate.js';
 import { MAX_ZONES, BASE_URL, inOrangeCounty, SUPPORT_MIN, SUPPORT_MAX } from '../../src/config.js';
 
@@ -37,7 +37,8 @@ export default async (req, context) => {
 
   if (req.method === 'GET') {
     return json({ email: s.email, amount: s.amount || null, phone: s.phone, status: s.status, notify_email: s.notify_email, notify_sms: s.notify_sms,
-      categories: s.categories, zones: s.zones.map((z) => ({ label: z.label, address: z.address, lat: z.lat, lng: z.lng, radius_mi: z.radius })) });
+      categories: s.categories, zones: s.zones.map((z) => ({ label: z.label, address: z.address, lat: z.lat, lng: z.lng, radius_mi: z.radius })) },
+      200, { 'Set-Cookie': supporterCookie(s.token) }); // opening your manage link turns off ads on this device
   }
 
   if (req.method === 'PUT') {

@@ -13,6 +13,9 @@ export const inOrangeCounty = (p) =>
 
 export const CATEGORIES = ['police', 'fire', 'medical', 'traffic'];
 export const MAX_ZONES = 3;
+// Google AdSense. Leave ADSENSE_CLIENT empty and no ads load anywhere.
+export const ADSENSE_CLIENT = (process.env.ADSENSE_CLIENT || '').trim();   // ca-pub-1234567890123456
+export const ADSENSE_SLOT = (process.env.ADSENSE_SLOT || '').trim();       // numeric ad unit ID
 // Monthly support amounts (whole dollars). Supporters get alerts.
 export const SUPPORT_MIN = Math.max(1, Math.round(Number(process.env.SUPPORT_MIN_DOLLARS || 3)));
 export const SUPPORT_MAX = 500;

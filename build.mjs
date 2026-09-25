@@ -12,4 +12,7 @@ for (const f of fs.readdirSync('dist')) {
   const p = path.join('dist', f);
   fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replaceAll('{{BASE_URL}}', BASE).replaceAll('Orlando Call Map', NAME));
 }
-console.log(`Built dist/ for ${BASE}`);
+// ads.txt tells ad buyers your AdSense account is authorized to sell ads on this site
+const client = (process.env.ADSENSE_CLIENT || '').trim();
+if (client) fs.writeFileSync('dist/ads.txt', `google.com, ${client.replace(/^ca-/, '')}, DIRECT, f08c47fec0942fa0\n`);
+console.log(`Built dist/ for ${BASE}${client ? ' (ads on)' : ''}`);

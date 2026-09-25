@@ -58,9 +58,14 @@ export default `<!doctype html>
         <li>This site covers the City of Orlando only. Calls handled by the Orange County Sheriff's Office or neighboring cities such as Winter Park aren't included, so areas just outside city limits may look quiet even when they aren't.</li>
       </ul>
     </section>
+    <aside class="ad-slot" id="ad-slot" data-client="{{AD_CLIENT}}" data-slot="{{AD_SLOT}}" aria-label="Advertisement" hidden>
+      <p class="ad-label">Advertisement</p>
+      <div class="ad-box" id="ad-box"></div>
+      <p class="ad-note">Supporters don't see ads. <a href="/alerts">Support the project</a></p>
+    </aside>
     <section class="pitch">
       <h2>Support the project, get alerts for your street</h2>
-      <p>This map is independent and free to use. Support it with a monthly amount you choose, and we'll text or email you when police, fire or rescue is dispatched near an address you pick.</p>
+      <p>This map is independent and free to use. Support it with a monthly amount you choose, and we'll text or email you when police, fire or rescue is dispatched near an address you pick. Supporters also browse without ads.</p>
       <a class="cta" href="/alerts">Support and get alerts</a>
     </section>
     <nav class="areas" aria-label="Neighborhoods">
@@ -75,6 +80,7 @@ export default `<!doctype html>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="/app.js"></script>
+<script src="/ads.js" defer></script>
 </body>
 </html>
 `;

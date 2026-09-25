@@ -1,0 +1,18 @@
+{
+  "name": "orlando-call-map",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0",
+    "fast-xml-parser": "^4.5.0",
+    "nodemailer": "^6.9.15",
+    "stripe": "^16.12.0"
+  }
+}

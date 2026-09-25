@@ -6,8 +6,8 @@ Live map of police, fire, medical and traffic calls in Orlando and Orange County
 
 | Piece | What it does |
 |---|---|
-| `netlify/functions/poll-scheduled.mjs` | Runs every 5 minutes and starts the background poller. |
-| `netlify/functions/poll-background.mjs` | Fetches the agency feeds, looks up addresses, saves calls, sends alerts (up to 15 minutes allowed). |
+| `netlify/functions/poll-scheduled.mjs` | Runs every 5 minutes: fetches the agency feeds, saves calls, places them on the map, sends alerts. Stops at about 24 seconds (Netlify's limit is 30) and finishes any leftover addresses on the next run. |
+| `netlify/functions/poll-now.mjs` | Visit `/api/poll-now` to run a poll immediately and see a report. Use it for setup and troubleshooting. |
 | `netlify/functions/page.mjs` | Builds the map pages (`/` and `/area/...`) with the live call list in the HTML, so Google can read it. |
 | Other functions | Call data, signup, Stripe webhook, manage page, sitemap, robots.txt. |
 | Netlify Blobs | Stores calls, subscribers and the address cache. Built in, nothing to set up. |
@@ -19,12 +19,13 @@ The map in visitors' browsers refreshes every 5 minutes. Each call stays on the 
 
 1. **Put the code on GitHub.** Create a new repository and upload this folder (GitHub's website lets you drag and drop files).
 2. **Create the site.** In Netlify: Add new project > Import an existing project > pick the repo. Netlify reads `netlify.toml`, so leave the build settings as they are.
-3. **Add environment variables.** Site configuration > Environment variables. Copy every line from `.env.example` and fill in real values. At minimum for launch: `BASE_URL`, `POLL_SECRET` (any long random string), `SITE_NAME`, `CONTACT_EMAIL`. Variables put in `netlify.toml` are not visible to functions, so always use the dashboard.
+3. **Add environment variables.** Site configuration > Environment variables. Copy every line from `.env.example` and fill in real values. At minimum for launch: `BASE_URL`, `SITE_NAME`, `CONTACT_EMAIL`. Variables put in `netlify.toml` are not visible to functions, so always use the dashboard.
 4. **Redeploy** (Deploys > Trigger deploy) so the build picks up the variables.
 5. **Connect your domain.** Domain management > Add a domain. You can buy it through Netlify or point one bought elsewhere. Netlify adds free HTTPS automatically. Then set `BASE_URL` to `https://yourdomain.com` and redeploy.
-6. **Check it's working.** Wait 5 minutes, then open `https://yourdomain.com/api/health`. You should see a recent `lastPoll` and each feed with a `lastOk` time. You can also watch it run under Logs > Functions > poll-background.
+6. **Check it's working.** Open `https://yourdomain.com/api/poll-now`. It runs a poll right away and shows how many calls each feed returned, how many were placed on the map, and any errors. Then open the home page. After that, the 5-minute schedule keeps it updated; `/api/health` shows the last run time.
+7. **Make the project public.** New Netlify projects start private. Open your site in a private/incognito window; if it asks you to log in, publish the project from its settings so visitors (and search engines) can see it.
 
-Scheduled functions only run on your published production site, not on preview deploys. To test without waiting, open Logs > Functions > poll-scheduled and click **Run now**.
+Scheduled functions only run on your published production site, not on preview deploys.
 
 ## Plan and cost
 
@@ -76,7 +77,7 @@ After launch:
 npm install
 cp .env.example .env
 npx netlify dev          # http://localhost:8888
-npx netlify functions:invoke poll-scheduled   # run a poll now
+# then open http://localhost:8888/api/poll-now to run a poll
 ```
 
 ## Before launch checklist

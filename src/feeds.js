@@ -36,15 +36,23 @@ function pick(obj, keys) {
   return '';
 }
 
+// A "record" must have BOTH a location and a call type. (Checking just one matched the
+// <?xml-stylesheet type="..."?> lines at the top of Orlando's feed.)
+const isRecord = (o) => o && typeof o === 'object' && !Array.isArray(o) && pick(o, FIELD.address) && (pick(o, FIELD.type) || pick(o, FIELD.id));
+
 function findRecords(node, depth = 0) {
   if (!node || typeof node !== 'object' || depth > 7) return null;
   if (Array.isArray(node)) {
-    if (node.length && typeof node[0] === 'object' && pick(node[0], [...FIELD.type, ...FIELD.address])) return node;
+    if (node.some(isRecord)) return node.filter(isRecord);
     for (const v of node) { const r = findRecords(v, depth + 1); if (r) return r; }
     return null;
   }
-  if (pick(node, FIELD.address) && pick(node, FIELD.type)) return [node]; // single record
-  for (const v of Object.values(node)) { const r = findRecords(v, depth + 1); if (r) return r; }
+  if (isRecord(node)) return [node];
+  for (const [k, v] of Object.entries(node)) {
+    if (k.startsWith('?')) continue; // XML processing instructions
+    const r = findRecords(v, depth + 1);
+    if (r) return r;
+  }
   return null;
 }
 
@@ -114,7 +122,7 @@ export async function fetchFeed(feed) {
   });
   if (!res.ok) throw new Error(`${feed.agency} feed HTTP ${res.status}`);
   const text = await res.text();
-  const trimmed = text.trim();
+  const trimmed = text.replace(/^\uFEFF/, '').trim();
   let records;
   if (trimmed.startsWith('{') || trimmed.startsWith('[')) records = findRecords(JSON.parse(trimmed)) || [];
   else if (/<table[\s>]/i.test(trimmed)) records = parseHtmlTable(trimmed);
@@ -144,5 +152,5 @@ export async function fetchFeed(feed) {
       lng: Number.isFinite(lng) && Math.abs(lng) > 1 ? lng : null,
       received_at,
     };
-  }).filter((c) => c.address);
+  }).filter((c) => c.address && !/^RESTRICTED/i.test(c.address));
 }

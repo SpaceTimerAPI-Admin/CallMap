@@ -40,7 +40,7 @@ async function census(oneLine) {
   const u = new URL('https://geocoding.geo.census.gov/geocoder/locations/onelineaddress');
   u.search = new URLSearchParams({ address: oneLine, benchmark: 'Public_AR_Current', format: 'json' });
   const r = await fetch(u, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(15_000) });
-  if (!r.ok) return null;
+  if (!r.ok) throw new Error(`HTTP ${r.status}`); // busy/rate-limited: retry later, don't cache as 'not found'
   const m = (await r.json())?.result?.addressMatches?.[0];
   return m ? { lat: m.coordinates.y, lng: m.coordinates.x } : null;
 }
@@ -54,7 +54,7 @@ async function nominatim(q) {
   u.search = new URLSearchParams({ q, format: 'json', limit: '1', countrycodes: 'us', bounded: '1',
     viewbox: `${OC_BBOX.minLng},${OC_BBOX.maxLat},${OC_BBOX.maxLng},${OC_BBOX.minLat}` });
   const r = await fetch(u, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(15_000) });
-  if (!r.ok) return null;
+  if (!r.ok) throw new Error(`HTTP ${r.status}`); // busy/rate-limited: retry later, don't cache as 'not found'
   const j = await r.json();
   return j[0] ? { lat: +j[0].lat, lng: +j[0].lon } : null;
 }
@@ -70,7 +70,7 @@ node(w.a)(w.b);out 1;`;
     method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' },
     body: 'data=' + encodeURIComponent(q), signal: AbortSignal.timeout(25_000),
   });
-  if (!r.ok) return null;
+  if (!r.ok) throw new Error(`HTTP ${r.status}`); // busy/rate-limited: retry later, don't cache as 'not found'
   const n = (await r.json())?.elements?.[0];
   return n ? { lat: n.lat, lng: n.lon } : null;
 }
@@ -101,7 +101,7 @@ export async function geocodeCall({ address, zip, city, district }) {
     }
   } catch (e) {
     console.warn('[geocode]', addr, e.message);
-    return null; // don't cache network errors
+    return false; // network trouble: don't cache, try again next run
   }
   if (!inOrangeCounty(p)) p = null;
   await cache.setJSON(hash(key), { lat: p?.lat ?? null, lng: p?.lng ?? null, ts: Date.now() });

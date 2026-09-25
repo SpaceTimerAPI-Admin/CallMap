@@ -1,10 +1,8 @@
-// Runs every 5 minutes. Scheduled functions are limited to 30 seconds, so it hands the
-// real work to the background function (15-minute limit) and returns immediately.
+// Every 5 minutes: fetch feeds, place calls on the map, send alerts.
+// Scheduled functions get 30 seconds; the poller stops at ~24s and finishes leftovers next run.
+import { runPoll } from '../../src/ingest.js';
+
 export default async () => {
-  const base = (process.env.URL || process.env.BASE_URL || '').replace(/\/$/, '');
-  const r = await fetch(`${base}/.netlify/functions/poll-background`, {
-    method: 'POST', headers: { 'x-poll-secret': process.env.POLL_SECRET || '' },
-  });
-  console.log(`[schedule] poll-background -> ${r.status}`);
+  await runPoll({ budgetMs: 24_000 });
 };
-export const config = { schedule: "*/5 * * * *" }; // every 5 minutes (must be a fixed string)
+export const config = { schedule: "*/5 * * * *" };

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Manage your alerts | Orlando Call Map</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body class="form-page">
+<header class="topbar">
+  <a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="17" r="11" fill="#F28C28"/><path d="M16 6c2-3 6-4 8-3-1 3-4 5-8 3z" fill="#57C08B"/><circle cx="16" cy="17" r="4" fill="#0F2C3F"/></svg>Orlando Call Map</a>
+  <a class="btn-quiet" href="/" style="margin-left:auto">Back to live map</a>
+</header>
+
+<main class="form-wrap" id="lost" hidden>
+  <form id="resend">
+    <h1>Manage your alerts</h1>
+    <p class="lede">Enter the email you signed up with and we'll send your personal manage link.</p>
+    <label class="field"><span>Email</span><input type="email" id="r-email" required></label>
+    <p class="msg" id="r-msg" role="status"></p>
+    <button class="cta" type="submit">Email my link</button>
+  </form>
+</main>
+
+<main class="form-wrap" id="app" hidden>
+  <form id="f">
+    <h1>Your alerts</h1>
+    <p class="lede" id="who"></p>
+    <div id="zones"></div>
+    <button type="button" class="btn-quiet" id="add">Add another place</button>
+
+    <fieldset style="margin-top:20px"><legend>Alert me about</legend>
+      <div class="checks">
+        <label><input type="checkbox" name="cat" value="police"> Police</label>
+        <label><input type="checkbox" name="cat" value="fire"> Fire</label>
+        <label><input type="checkbox" name="cat" value="medical"> Medical</label>
+        <label><input type="checkbox" name="cat" value="traffic"> Traffic</label>
+      </div></fieldset>
+    <fieldset><legend>Send alerts by</legend>
+      <div class="checks">
+        <label><input type="checkbox" id="n-email"> Email</label>
+        <label><input type="checkbox" id="n-sms"> Text message</label>
+      </div></fieldset>
+    <label class="field"><span>Mobile number</span><input type="tel" id="phone" placeholder="(407) 555-0123"></label>
+    <p class="msg" id="msg" role="status"></p>
+    <div class="row" style="flex-wrap:wrap">
+      <button class="cta" type="submit">Save changes</button>
+      <button class="btn-quiet" type="button" id="billing">Billing and cancellation</button>
+    </div>
+  </form>
+  <div id="mini-map" aria-label="Your alert areas"></div>
+</main>
+
+<template id="zone-tpl">
+  <div class="zone">
+    <div class="zone-head"><input type="text" class="z-label" maxlength="30" placeholder="Name (e.g. Work)"><button type="button" class="btn-quiet z-remove">Remove</button></div>
+    <div class="row"><input type="text" class="z-address" placeholder="Address"><button type="button" class="btn-quiet z-find">Find</button></div>
+    <label class="field" style="margin-top:10px"><span>Radius: <output class="z-rout"></output> mi</span>
+      <input type="range" class="z-radius" min="0.25" max="10" step="0.25"></label>
+  </div>
+</template>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="/zone-map.js"></script>
+<script src="/manage.js"></script>
+</body>
+</html>

@@ -21,10 +21,11 @@
     <h1>Support the project, get alerts</h1>
     <p class="lede">Orlando Call Map is independent and free to use. Supporters choose a monthly amount and get a text or email when police, fire, rescue or a crash response is dispatched near an address they pick, and browse the site without ads. Covers calls inside Orlando city limits.</p>
 
-    <fieldset class="amounts"><legend>Monthly support</legend>
-      <div class="amount-row" id="presets"></div>
-      <label class="field other-amount" id="other-wrap" hidden><span>Your amount</span>
-        <div class="money"><span aria-hidden="true">$</span><input type="text" id="other" inputmode="numeric" pattern="[0-9]*" maxlength="3" aria-describedby="amt-help"></div></label>
+    <fieldset class="amounts"><legend>Monthly support, per month</legend>
+      <div class="amount-row">
+        <div id="presets" class="preset-group"></div>
+        <label class="custom-amount" id="custom-wrap"><span aria-hidden="true">$</span><input id="other" inputmode="numeric" maxlength="3" placeholder="Other" autocomplete="off" aria-label="Custom monthly amount in dollars" aria-describedby="amt-help"></label>
+      </div>
       <small id="amt-help">Minimum $<span id="min">3</span> a month. Cancel anytime. Support payments go to running the site and sending alerts. They aren't charitable donations and aren't tax-deductible.</small>
     </fieldset>
 

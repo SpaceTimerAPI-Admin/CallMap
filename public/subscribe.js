@@ -2,31 +2,34 @@
   const $ = (id) => document.getElementById(id);
   const zm = ZoneMap($('mini-map'));
   let spot = null;
-  let amount = 10, cfg = { supportMin: 3, supportMax: 500, supportPresets: [5, 10, 20] };
+  let cfg = { supportMin: 3, supportMax: 500, supportPresets: [5, 10, 15] };
+  let amount = 10; // a preset number, or 'custom' when the box is used
+
+  const presets = () => cfg.supportPresets.filter((n) => n >= cfg.supportMin && n <= cfg.supportMax);
+  const defaultAmount = () => { const p = presets(); return p.includes(10) ? 10 : (p[Math.floor(p.length / 2)] ?? 'custom'); };
 
   function renderAmounts() {
     $('min').textContent = cfg.supportMin;
+    if (amount !== 'custom' && !presets().includes(amount)) amount = defaultAmount();
     const row = $('presets'); row.replaceChildren();
-    const opts = [...cfg.supportPresets.filter((n) => n >= cfg.supportMin), 'other'];
-    if (!cfg.supportPresets.includes(amount)) amount = opts[Math.min(1, opts.length - 2)] ?? cfg.supportMin;
-    for (const v of opts) {
+    for (const v of presets()) {
       const b = document.createElement('button');
-      b.type = 'button'; b.className = 'amount';
-      b.textContent = v === 'other' ? 'Other' : `$${v}/mo`;
-      b.setAttribute('aria-pressed', String(v === amount));
-      b.onclick = () => {
-        row.querySelectorAll('.amount').forEach((x) => x.setAttribute('aria-pressed', 'false'));
-        b.setAttribute('aria-pressed', 'true');
-        $('other-wrap').hidden = v !== 'other';
-        amount = v === 'other' ? 'other' : v;
-        if (v === 'other') $('other').focus();
-      };
+      b.type = 'button'; b.className = 'amount'; b.textContent = `$${v}`; b.setAttribute('aria-label', `$${v} per month`);
+      b.setAttribute('aria-pressed', String(amount === v));
+      b.onclick = () => { amount = v; $('other').value = ''; renderAmounts(); };
       row.append(b);
     }
+    $('custom-wrap').classList.toggle('is-active', amount === 'custom');
   }
-  fetch('/api/config').then((r) => r.json()).then((c) => { cfg = { ...cfg, ...c }; renderAmounts(); }).catch(renderAmounts);
+  $('other').addEventListener('input', () => {
+    const el = $('other');
+    el.value = el.value.replace(/\D/g, '');
+    amount = el.value ? 'custom' : defaultAmount(); // clearing the box goes back to the default pick
+    renderAmounts();
+  });
+  fetch('/api/config').then((r) => r.json()).then((c) => { cfg = { ...cfg, ...c }; renderAmounts(); }).catch(() => {});
   renderAmounts();
-  const chosenAmount = () => (amount === 'other' ? Math.round(Number($('other').value)) : amount);
+  const chosenAmount = () => (amount === 'custom' ? Math.round(Number($('other').value)) : amount);
   const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'msg ' + (ok ? 'ok' : 'err'); };
   const redraw = () => zm.draw(spot ? [{ ...spot, radius: +$('radius').value }] : []);
 

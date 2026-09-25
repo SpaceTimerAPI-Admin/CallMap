@@ -10,6 +10,9 @@ export default async (req) => {
   if (!stripe) return json({ error: 'Payments aren’t set up yet. Add your Stripe key in Netlify.' }, 503);
 
   const { email, phone, categories, zone, amount } = await readJson(req);
+  if (amount === undefined || amount === null || amount === '') {
+    return json({ error: 'This page is out of date. Refresh it (Ctrl+Shift+R, or pull down on a phone) and try again.' }, 400);
+  }
   const dollars = Math.round(Number(amount));
   if (!Number.isFinite(dollars) || dollars < SUPPORT_MIN || dollars > SUPPORT_MAX) return json({ error: `Choose a monthly amount from $${SUPPORT_MIN} to $${SUPPORT_MAX}.` }, 400);
   const em = String(email || '').trim().toLowerCase();

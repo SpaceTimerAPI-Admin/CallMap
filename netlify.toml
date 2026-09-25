@@ -43,11 +43,14 @@
   [headers.values]
     X-Robots-Tag = "noindex"
 
+# Scripts and styles: browsers always check for a newer version (cheap: unchanged files return
+# "304 Not Modified"), and Netlify's CDN clears its copy on every deploy. This prevents an old
+# script from running against a new page after you deploy.
 [[headers]]
   for = "/*.js"
   [headers.values]
-    Cache-Control = "public, max-age=3600"
+    Cache-Control = "public, max-age=0, must-revalidate"
 [[headers]]
   for = "/*.css"
   [headers.values]
-    Cache-Control = "public, max-age=3600"
+    Cache-Control = "public, max-age=0, must-revalidate"

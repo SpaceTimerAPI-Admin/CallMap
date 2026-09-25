@@ -48,7 +48,7 @@ To expand beyond city limits later, add another feed to `FEEDS` in `src/feeds.js
 
 1. Put your Stripe secret key in `STRIPE_SECRET_KEY`. No price setup is needed: each supporter picks an amount, and the site creates a matching monthly price at checkout.
 2. Optional: create a Product named "Orlando Call Map monthly support" and put its ID (`prod_...`) in `STRIPE_PRODUCT_ID`, so all supporters appear under one product in your dashboard.
-3. Set `SUPPORT_MIN_DOLLARS` (default 3) and `SUPPORT_PRESETS` (default `5,10,20`). Keep the minimum high enough to cover a supporter's text-message costs.
+3. Set `SUPPORT_MIN_DOLLARS` (default 3) and `SUPPORT_PRESETS` (default `5,10,15`). Keep the minimum high enough to cover a supporter's text-message costs.
 4. Developers > Webhooks > Add endpoint: `https://yourdomain.com/webhooks/stripe`, events `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`. Put the signing secret in `STRIPE_WEBHOOK_SECRET`.
 5. Turn on the Customer Portal (Settings > Billing > Customer portal) so supporters can cancel and update their card on their own. Supporters change their monthly amount on their manage page; the new amount starts with their next bill.
 6. Test with Stripe test keys and card 4242 4242 4242 4242 before switching to live keys.

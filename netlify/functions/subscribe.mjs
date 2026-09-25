@@ -3,13 +3,15 @@ import { geocodeUserAddress } from '../../src/geocode.js';
 import { pendingStore, tokenForEmail, getSub } from '../../src/store.js';
 import { json, readJson } from '../../src/http.js';
 import { validEmail, normPhone, clampRadius, cleanCats } from '../../src/validate.js';
-import { BASE_URL } from '../../src/config.js';
+import { BASE_URL, SITE_NAME, SUPPORT_MIN, SUPPORT_MAX } from '../../src/config.js';
 
 export default async (req) => {
   if (req.method !== 'POST') return json({ error: 'Use POST' }, 405);
-  if (!stripe || !process.env.STRIPE_PRICE_ID) return json({ error: 'Payments aren’t set up yet. Add your Stripe keys in Netlify.' }, 503);
+  if (!stripe) return json({ error: 'Payments aren’t set up yet. Add your Stripe key in Netlify.' }, 503);
 
-  const { email, phone, categories, zone } = await readJson(req);
+  const { email, phone, categories, zone, amount } = await readJson(req);
+  const dollars = Math.round(Number(amount));
+  if (!Number.isFinite(dollars) || dollars < SUPPORT_MIN || dollars > SUPPORT_MAX) return json({ error: `Choose a monthly amount from $${SUPPORT_MIN} to $${SUPPORT_MAX}.` }, 400);
   const em = String(email || '').trim().toLowerCase();
   if (!validEmail(em)) return json({ error: 'Enter a valid email address.' }, 400);
   const ph = normPhone(phone);
@@ -28,18 +30,28 @@ export default async (req) => {
 
   const token = newToken();
   await pendingStore().setJSON(token, {
-    email: em, phone: ph, categories: cats, created_at: Date.now(),
+    email: em, phone: ph, categories: cats, amount: dollars, created_at: Date.now(),
     zone: { address: String(zone.address).slice(0, 200), label: String(zone.label || 'Home').slice(0, 30), radius: clampRadius(zone.radius), lat: p.lat, lng: p.lng },
   });
 
   try {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
-      line_items: [{ price: process.env.STRIPE_PRICE_ID, quantity: 1 }],
+      line_items: [{
+        quantity: 1,
+        price_data: {
+          currency: 'usd',
+          unit_amount: dollars * 100,
+          recurring: { interval: 'month' },
+          ...(process.env.STRIPE_PRODUCT_ID
+            ? { product: process.env.STRIPE_PRODUCT_ID }
+            : { product_data: { name: `${SITE_NAME} monthly support` } }),
+        },
+      }],
+      custom_text: { submit: { message: 'Supporters get address alerts. This is not a charitable donation and is not tax-deductible. Cancel anytime from your manage link.' } },
       customer_email: em,
       metadata: { pending: token },
       subscription_data: { metadata: { pending: token } },
-      allow_promotion_codes: true,
       success_url: `${BASE_URL}/alerts/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${BASE_URL}/alerts`,
     });

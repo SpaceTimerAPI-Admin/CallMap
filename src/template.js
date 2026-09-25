@@ -32,7 +32,7 @@ export default `<!doctype html>
 <header class="topbar">
   <a class="brand" href="/"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="17" r="11" fill="#F28C28"/><path d="M16 6c2-3 6-4 8-3-1 3-4 5-8 3z" fill="#57C08B"/><circle cx="16" cy="17" r="4" fill="#0F2C3F"/></svg>{{SITE_NAME}}</a>
   <p class="status" aria-live="polite"><span id="updated">Updated <time datetime="{{UPDATED_ISO}}">{{UPDATED}}</time></span><span id="next">Next update in {{POLL_MIN}}:00</span></p>
-  <a class="cta" href="/alerts">Get alerts near you</a>
+  <a class="cta" href="/alerts">Support &amp; get alerts</a>
 </header>
 <main class="layout">
   <div id="map" role="region" aria-label="Map of active calls"></div>
@@ -59,9 +59,9 @@ export default `<!doctype html>
       </ul>
     </section>
     <section class="pitch">
-      <h2>Know when something happens on your street</h2>
-      <p>Pick an address and a radius. We'll text or email you when police, fire or rescue is dispatched inside it. $10 a month, cancel anytime.</p>
-      <a class="cta" href="/alerts">Set up alerts</a>
+      <h2>Support the project, get alerts for your street</h2>
+      <p>This map is independent and free to use. Support it with a monthly amount you choose, and we'll text or email you when police, fire or rescue is dispatched near an address you pick.</p>
+      <a class="cta" href="/alerts">Support and get alerts</a>
     </section>
     <nav class="areas" aria-label="Neighborhoods">
       <h2>Calls by area</h2>

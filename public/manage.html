@@ -46,10 +46,15 @@
         <label><input type="checkbox" id="n-sms"> Text message</label>
       </div></fieldset>
     <label class="field"><span>Mobile number</span><input type="tel" id="phone" placeholder="(407) 555-0123"></label>
+    <fieldset><legend>Monthly support</legend>
+      <div class="row" style="max-width:320px"><div class="money"><span aria-hidden="true">$</span><input type="text" id="amount" inputmode="numeric" pattern="[0-9]*" maxlength="3" aria-label="Monthly amount in dollars"></div>
+      <button type="button" class="btn-quiet" id="set-amount">Change amount</button></div>
+      <small style="display:block;color:var(--muted);font-size:.85rem;margin-top:4px">New amounts start with your next monthly bill.</small>
+    </fieldset>
     <p class="msg" id="msg" role="status"></p>
     <div class="row" style="flex-wrap:wrap">
       <button class="cta" type="submit">Save changes</button>
-      <button class="btn-quiet" type="button" id="billing">Billing and cancellation</button>
+      <button class="btn-quiet" type="button" id="billing">Payment method and cancellation</button>
     </div>
   </form>
   <div id="mini-map" aria-label="Your alert areas"></div>

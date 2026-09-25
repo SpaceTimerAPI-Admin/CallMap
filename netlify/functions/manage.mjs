@@ -3,12 +3,31 @@ import { getSub, saveSub } from '../../src/store.js';
 import { stripe } from '../../src/billing.js';
 import { json, readJson } from '../../src/http.js';
 import { normPhone, clampRadius, cleanCats } from '../../src/validate.js';
-import { MAX_ZONES, BASE_URL, inOrangeCounty } from '../../src/config.js';
+import { MAX_ZONES, BASE_URL, inOrangeCounty, SUPPORT_MIN, SUPPORT_MAX } from '../../src/config.js';
 
 export default async (req, context) => {
   const s = await getSub(context.params.token);
   if (!s) return json({ error: 'Not found' }, 404);
-  const billing = new URL(req.url).pathname.endsWith('/billing');
+  const path = new URL(req.url).pathname;
+  const billing = path.endsWith('/billing');
+
+  // Change monthly amount (takes effect on the next bill, no partial charges)
+  if (path.endsWith('/amount') && req.method === 'POST') {
+    if (!stripe || !s.stripe_sub) return json({ error: 'Changing your amount isn’t available right now.' }, 503);
+    if (!['active', 'trialing', 'past_due'].includes(s.status)) return json({ error: 'Your support isn’t active. Sign up again at /alerts.' }, 400);
+    const dollars = Math.round(Number((await readJson(req)).amount));
+    if (!Number.isFinite(dollars) || dollars < SUPPORT_MIN || dollars > SUPPORT_MAX) return json({ error: `Choose a monthly amount from $${SUPPORT_MIN} to $${SUPPORT_MAX}.` }, 400);
+    const sub = await stripe.subscriptions.retrieve(s.stripe_sub);
+    const item = sub.items.data[0];
+    const product = typeof item.price.product === 'string' ? item.price.product : item.price.product.id;
+    await stripe.subscriptions.update(s.stripe_sub, {
+      items: [{ id: item.id, price_data: { currency: 'usd', product, unit_amount: dollars * 100, recurring: { interval: 'month' } } }],
+      proration_behavior: 'none',
+    });
+    s.amount = dollars;
+    await saveSub(s);
+    return json({ ok: true, amount: dollars });
+  }
 
   if (billing && req.method === 'POST') {
     if (!stripe || !s.stripe_customer) return json({ error: 'Billing isn’t available right now.' }, 503);
@@ -17,7 +36,7 @@ export default async (req, context) => {
   }
 
   if (req.method === 'GET') {
-    return json({ email: s.email, phone: s.phone, status: s.status, notify_email: s.notify_email, notify_sms: s.notify_sms,
+    return json({ email: s.email, amount: s.amount || null, phone: s.phone, status: s.status, notify_email: s.notify_email, notify_sms: s.notify_sms,
       categories: s.categories, zones: s.zones.map((z) => ({ label: z.label, address: z.address, lat: z.lat, lng: z.lng, radius_mi: z.radius })) });
   }
 
@@ -38,4 +57,4 @@ export default async (req, context) => {
   }
   return json({ error: 'Method not allowed' }, 405);
 };
-export const config = { path: ['/api/manage/:token', '/api/manage/:token/billing'], rateLimit: { windowLimit: 30, windowSize: 60, aggregateBy: ['ip', 'domain'] } };
+export const config = { path: ['/api/manage/:token', '/api/manage/:token/billing', '/api/manage/:token/amount'], rateLimit: { windowLimit: 30, windowSize: 60, aggregateBy: ['ip', 'domain'] } };

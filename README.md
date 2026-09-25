@@ -1,6 +1,6 @@
 # Orlando Call Map (Netlify version)
 
-Live map of police, fire, medical and traffic calls inside Orlando city limits, with $10/month radius alerts by text and email.
+Live map of police, fire, medical and traffic calls inside Orlando city limits, funded by monthly supporters, who choose their own amount and get radius alerts by text and email.
 
 ## How it runs on Netlify
 
@@ -46,10 +46,14 @@ To expand beyond city limits later, add another feed to `FEEDS` in `src/feeds.js
 
 ## Payments (Stripe)
 
-1. Create a Product "Radius alerts" with a recurring Price of $10/month. Put its price ID in `STRIPE_PRICE_ID` and your secret key in `STRIPE_SECRET_KEY`.
-2. Developers > Webhooks > Add endpoint: `https://yourdomain.com/webhooks/stripe`, events `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`. Put the signing secret in `STRIPE_WEBHOOK_SECRET`.
-3. Turn on the Customer Portal (Settings > Billing > Customer portal) so subscribers can cancel on their own.
-4. Test with Stripe test keys and card 4242 4242 4242 4242 before switching to live keys.
+1. Put your Stripe secret key in `STRIPE_SECRET_KEY`. No price setup is needed: each supporter picks an amount, and the site creates a matching monthly price at checkout.
+2. Optional: create a Product named "Orlando Call Map monthly support" and put its ID (`prod_...`) in `STRIPE_PRODUCT_ID`, so all supporters appear under one product in your dashboard.
+3. Set `SUPPORT_MIN_DOLLARS` (default 3) and `SUPPORT_PRESETS` (default `5,10,20`). Keep the minimum high enough to cover a supporter's text-message costs.
+4. Developers > Webhooks > Add endpoint: `https://yourdomain.com/webhooks/stripe`, events `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`. Put the signing secret in `STRIPE_WEBHOOK_SECRET`.
+5. Turn on the Customer Portal (Settings > Billing > Customer portal) so supporters can cancel and update their card on their own. Supporters change their monthly amount on their manage page; the new amount starts with their next bill.
+6. Test with Stripe test keys and card 4242 4242 4242 4242 before switching to live keys.
+
+**Wording matters.** The site calls this "support," not "donations," and says it isn't tax-deductible, because supporters receive alerts in return and the project isn't a registered nonprofit. Keep it that way unless you form a nonprofit. If you do, talk to an accountant about Florida's charitable-solicitation registration before asking for donations.
 
 ## Alert delivery
 
@@ -86,6 +90,6 @@ npx netlify dev          # http://localhost:8888
 - [ ] Lawyer reviews `public/terms.html` and `public/privacy.html`
 - [ ] `/api/poll-now` shows both Orlando feeds working
 - [ ] Paid map tiles configured
-- [ ] Stripe live keys, price, webhook and customer portal
+- [ ] Stripe live key, webhook and customer portal; minimum amount set
 - [ ] Email with SPF/DKIM; Twilio registration approved
 - [ ] Personal or Pro Netlify plan with auto-recharge on

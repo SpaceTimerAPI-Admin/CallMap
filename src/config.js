@@ -13,6 +13,10 @@ export const inOrangeCounty = (p) =>
 
 export const CATEGORIES = ['police', 'fire', 'medical', 'traffic'];
 export const MAX_ZONES = 3;
+// Monthly support amounts (whole dollars). Supporters get alerts.
+export const SUPPORT_MIN = Math.max(1, Math.round(Number(process.env.SUPPORT_MIN_DOLLARS || 3)));
+export const SUPPORT_MAX = 500;
+export const SUPPORT_PRESETS = String(process.env.SUPPORT_PRESETS || '5,10,20').split(',').map(Number).filter((n) => n >= 1);
 export const MIN_RADIUS = 0.25;
 export const MAX_RADIUS = 10;
 

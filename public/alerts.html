@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Police, Fire & EMS Alerts for Your Address – Orlando FL | Orlando Call Map</title>
-<meta name="description" content="Get a text or email when police, fire or rescue is dispatched near your home, business or school in Orlando, Florida. Choose your radius. $10/month, cancel anytime.">
+<title>Support Orlando Call Map & Get Police, Fire and EMS Alerts for Your Address | Orlando FL</title>
+<meta name="description" content="Support Orlando Call Map with a monthly amount you choose. Supporters get a text or email when police, fire or rescue is dispatched near their home, business or school in Orlando, Florida.">
 <link rel="canonical" href="{{BASE_URL}}/alerts">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
@@ -18,9 +18,15 @@
 </header>
 <main class="form-wrap">
   <form id="f" novalidate>
-    <h1>Alerts for your address</h1>
-    <p class="lede">When police, fire, rescue or a crash response is dispatched inside your radius, we'll text or email you. Covers calls inside Orlando city limits.</p>
-    <p class="price">$10 <span>per month, cancel anytime</span></p>
+    <h1>Support the project, get alerts</h1>
+    <p class="lede">Orlando Call Map is independent and free to use. Supporters choose a monthly amount and get a text or email when police, fire, rescue or a crash response is dispatched near an address they pick. Covers calls inside Orlando city limits.</p>
+
+    <fieldset class="amounts"><legend>Monthly support</legend>
+      <div class="amount-row" id="presets"></div>
+      <label class="field other-amount" id="other-wrap" hidden><span>Your amount</span>
+        <div class="money"><span aria-hidden="true">$</span><input type="text" id="other" inputmode="numeric" pattern="[0-9]*" maxlength="3" aria-describedby="amt-help"></div></label>
+      <small id="amt-help">Minimum $<span id="min">3</span> a month. Cancel anytime. Support payments go to running the site and sending alerts. They aren't charitable donations and aren't tax-deductible.</small>
+    </fieldset>
 
     <label class="field"><span>Address to watch</span>
       <div class="row"><input type="text" id="address" autocomplete="street-address" placeholder="123 Main St, Orlando" required>
@@ -47,7 +53,7 @@
     <p class="lede" style="font-size:.92rem">Alerts come from the departments' dispatch logs. Early reports can be vague or wrong, sensitive calls such as domestic violence are withheld, and only calls inside Orlando city limits are included.</p>
     <label class="check"><input type="checkbox" id="agree"> <span>I understand alerts can be delayed by several minutes, locations are approximate, and this is not a substitute for 9-1-1. I agree to the <a href="/terms">Terms</a>.</span></label>
     <p class="msg" id="msg" role="status"></p>
-    <button class="cta" type="submit" id="go">Continue to payment</button>
+    <button class="cta" type="submit" id="go">Start monthly support</button>
   </form>
   <div id="mini-map" aria-label="Preview of your alert area"></div>
 </main>

@@ -45,9 +45,11 @@
   fetch(`/api/manage/${token}`).then(async (r) => {
     const d = await r.json();
     if (!r.ok) { $('app').hidden = true; $('lost').hidden = false; $('r-msg').className = 'msg err'; $('r-msg').textContent = 'That link has expired or is wrong. Request a new one.'; return; }
-    $('who').textContent = `${d.email}. Status: ${d.status === 'active' || d.status === 'trialing' ? 'active' : d.status.replace('_', ' ')}.`;
+    const active = d.status === 'active' || d.status === 'trialing';
+    $('who').textContent = `${d.email}. ${active ? `Supporting${d.amount ? ` at $${d.amount} a month` : ''}. Alerts are on.` : `Support ${d.status.replace('_', ' ')}. Alerts are paused.`}`;
     zones = d.zones.map((z) => ({ label: z.label, address: z.address, radius: z.radius_mi, lat: z.lat, lng: z.lng }));
     document.querySelectorAll('input[name=cat]').forEach((c) => { c.checked = d.categories.includes(c.value); });
+    $('amount').value = d.amount || '';
     $('n-email').checked = !!d.notify_email; $('n-sms').checked = !!d.notify_sms; $('phone').value = d.phone || '';
     render(); redraw();
   });
@@ -62,6 +64,12 @@
     const d = await r.json();
     r.ok ? msg('Saved. New alerts will use these settings.', true) : msg(d.error);
   });
+
+  $('set-amount').onclick = async () => {
+    const r = await fetch(`/api/manage/${token}/amount`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: Number($('amount').value) }) });
+    const d = await r.json();
+    r.ok ? msg(`Updated. Your next bill will be $${d.amount}. Thank you.`, true) : msg(d.error);
+  };
 
   $('billing').onclick = async () => {
     const r = await fetch(`/api/manage/${token}/billing`, { method: 'POST' });

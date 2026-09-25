@@ -1,6 +1,6 @@
 // Address -> lat/lng. Street addresses: US Census geocoder, then OpenStreetMap Nominatim.
 // Intersections ("COLONIAL DR / MILLS AV"): OpenStreetMap Overpass (finds the node both roads share).
-import { db } from './db.js';
+import { geoStore, hash } from './store.js';
 import { OC_BBOX, inOrangeCounty } from './config.js';
 
 const UA = `${process.env.SITE_NAME || 'Orlando Call Map'} (${process.env.CONTACT_EMAIL || 'admin@example.com'})`;
@@ -76,7 +76,8 @@ export async function geocodeCall({ address, zip, city }) {
   const addr = cleanAddress(address);
   if (!addr) return null;
   const key = `${addr}|${zip || city || ''}`;
-  const hit = db.prepare('SELECT lat, lng, ts FROM geocache WHERE address = ?').get(key);
+  const cache = geoStore();
+  const hit = await cache.get(hash(key), { type: 'json' });
   if (hit && (hit.lat != null || Date.now() - hit.ts < 86_400_000)) return hit.lat != null ? { lat: hit.lat, lng: hit.lng } : null;
 
   let p = null;
@@ -94,7 +95,7 @@ export async function geocodeCall({ address, zip, city }) {
     return null; // don't cache network errors
   }
   if (!inOrangeCounty(p)) p = null;
-  db.prepare('INSERT OR REPLACE INTO geocache (address, lat, lng, ts) VALUES (?, ?, ?, ?)').run(key, p?.lat ?? null, p?.lng ?? null, Date.now());
+  await cache.setJSON(hash(key), { lat: p?.lat ?? null, lng: p?.lng ?? null, ts: Date.now() });
   return p;
 }
 

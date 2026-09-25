@@ -107,7 +107,7 @@
       const d = await r.json();
       offset = d.serverTime - Date.now();
       calls = d.calls;
-      nextAt = (d.nextPollAt ? d.nextPollAt - offset : Date.now() + POLL_MS) + 20_000; // give the server time to finish polling
+      nextAt = (d.nextPollAt ? d.nextPollAt - offset : Date.now() + POLL_MS) + 40_000; // give the background poller time to finish
       updatedEl.textContent = `Updated ${fmt(d.lastPollAt || d.serverTime)}`;
       draw();
       if (firstLoad && selected) { firstLoad = false; if (markers.has(selected)) select(selected, true); }

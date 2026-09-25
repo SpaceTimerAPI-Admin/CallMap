@@ -1,56 +1,65 @@
-// Poll feeds -> store new calls -> geocode -> send alerts -> clean up.
-import { db } from './db.js';
+// Poll feeds -> store new calls -> geocode -> send alerts. Runs in a background function (15-minute limit).
 import { FEEDS, fetchFeed } from './feeds.js';
 import { geocodeCall } from './geocode.js';
 import { processAlerts } from './alerts.js';
-import { ACTIVE_WINDOW_MS } from './config.js';
+import { kv, recentCalls, saveRecentCalls, getState, saveState, pendingStore } from './store.js';
 
-export const pollState = { running: false, lastRun: 0, lastOk: {}, lastError: {} };
+export async function runPoll() {
+  const meta = kv('meta');
+  const lock = await meta.get('lock', { type: 'json' });
+  if (lock && Date.now() - lock.at < 4 * 60_000) { console.log('[poll] previous run still going, skipping'); return { skipped: true }; }
+  await meta.setJSON('lock', { at: Date.now() });
 
-const exists = db.prepare('SELECT 1 FROM calls WHERE id = ?');
-const insert = db.prepare(`INSERT INTO calls (id, agency, agency_name, category, type, address, lat, lng, received_at, first_seen)
-  VALUES (@id, @agency, @agency_name, @category, @type, @address, @lat, @lng, @received_at, @first_seen)`);
-
-export async function pollFeeds() {
-  if (pollState.running) return;
-  pollState.running = true;
-  const fresh = [];
   try {
+    const state = await getState();
+    let recent = await recentCalls();
+    const known = new Set(recent.map((c) => c.id));
+    const fresh = [];
+
     for (const feed of FEEDS) {
       try {
         const calls = await fetchFeed(feed);
-        pollState.lastOk[feed.agency] = Date.now();
-        delete pollState.lastError[feed.agency];
+        state.lastOk[feed.agency] = Date.now();
+        delete state.lastError[feed.agency];
         for (const c of calls) {
-          if (exists.get(c.id)) continue;
+          if (known.has(c.id)) continue;
+          known.add(c.id);
           if (c.lat == null) {
             const p = await geocodeCall(c);
             if (p) { c.lat = p.lat; c.lng = p.lng; }
           }
-          c.first_seen = Date.now();
-          insert.run(c);
-          fresh.push(c);
+          const { zip, city, ...keep } = c;
+          keep.first_seen = Date.now();
+          recent.push(keep);
+          fresh.push(keep);
         }
       } catch (e) {
-        pollState.lastError[feed.agency] = e.message;
+        state.lastError[feed.agency] = e.message;
         console.error(`[poll] ${feed.agency}:`, e.message);
       }
+      // Save after each feed so the map updates even if a later feed is slow
+      recent = recent.filter((c) => c.first_seen > Date.now() - 86_400_000);
+      await saveRecentCalls(recent);
     }
-    // Only alert on calls dispatched recently (avoids an alert burst on a fresh database)
-    const recent = fresh.filter((c) => !c.received_at || Date.now() - c.received_at < 20 * 60_000);
-    const sent = await processAlerts(recent);
-    console.log(`[poll] ${new Date().toISOString()} new=${fresh.length} alerts=${sent}`);
+    state.lastRun = Date.now();
+    await saveState(state);
 
-    const day = Date.now() - 86_400_000;
-    db.prepare('DELETE FROM calls WHERE first_seen < ?').run(day);
-    db.prepare('DELETE FROM sent WHERE ts < ?').run(Date.now() - 3 * 86_400_000);
-    db.prepare('DELETE FROM pending WHERE created_at < ?').run(day);
+    // Only alert on calls dispatched recently (avoids an alert burst on the very first run)
+    const alertable = fresh.filter((c) => !c.received_at || Date.now() - c.received_at < 20 * 60_000);
+    const sent = await processAlerts(alertable);
+    console.log(`[poll] new=${fresh.length} alerts=${sent}`);
+
+    // About once an hour, clear abandoned checkouts older than a day
+    if (new Date().getMinutes() < 5) {
+      const ps = pendingStore();
+      const { blobs } = await ps.list();
+      for (const b of blobs) {
+        const p = await ps.get(b.key, { type: 'json' });
+        if (!p || Date.now() - p.created_at > 86_400_000) await ps.delete(b.key);
+      }
+    }
+    return { fresh: fresh.length, sent };
   } finally {
-    pollState.running = false;
-    pollState.lastRun = Date.now();
+    await meta.delete('lock');
   }
-}
-
-export function activeCalls() {
-  return db.prepare('SELECT * FROM calls WHERE first_seen >= ? ORDER BY first_seen DESC').all(Date.now() - ACTIVE_WINDOW_MS);
 }

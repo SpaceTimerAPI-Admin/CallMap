@@ -1,51 +1,50 @@
 import Stripe from 'stripe';
 import crypto from 'node:crypto';
-import { db } from './db.js';
 import { BASE_URL, SITE_NAME } from './config.js';
 import { sendEmail } from './notify.js';
+import { pendingStore, getSub, saveSub, tokenForEmail, linkEmail, tokenForStripeSub, linkStripeSub } from './store.js';
 
 export const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
-
 export const newToken = () => crypto.randomBytes(24).toString('base64url');
 
-// Idempotent: called from the webhook and from the success page, whichever comes first.
+// Idempotent: runs from both the Stripe webhook and the success page; whichever lands first does the work.
 export async function activateFromSession(session) {
-  if (!session || session.mode !== 'subscription' || !['complete'].includes(session.status)) return null;
+  if (!session || session.mode !== 'subscription' || session.status !== 'complete') return null;
+  if (session.subscription) {
+    const t = await tokenForStripeSub(session.subscription);
+    if (t) { const s = await getSub(t); if (s) return s; }
+  }
   const pendingToken = session.metadata?.pending;
-  const existingBySub = session.subscription && db.prepare('SELECT * FROM subscribers WHERE stripe_sub = ?').get(session.subscription);
-  if (existingBySub) return existingBySub;
+  if (!pendingToken) return null;
+  const pend = await pendingStore().get(pendingToken, { type: 'json' });
+  if (!pend) return null;
 
-  const pending = pendingToken && db.prepare('SELECT * FROM pending WHERE token = ?').get(pendingToken);
-  if (!pending) return null;
-  const data = JSON.parse(pending.data);
+  // Reuse an existing manage link for returning customers; otherwise the pending token becomes the manage token.
+  // Both paths compute the same token, so a webhook/success-page race writes the same record twice (harmless).
+  const token = (await tokenForEmail(pend.email)) || pendingToken;
+  const prev = await getSub(token);
+  const sub = {
+    token, email: pend.email, phone: pend.phone, status: 'active',
+    stripe_customer: session.customer, stripe_sub: session.subscription,
+    notify_email: true, notify_sms: !!pend.phone, categories: pend.categories,
+    zones: [pend.zone], created_at: prev?.created_at || Date.now(),
+  };
+  await saveSub(sub);
+  await linkEmail(sub.email, token);
+  if (session.subscription) await linkStripeSub(session.subscription, token);
 
-  const tx = db.transaction(() => {
-    let sub = db.prepare('SELECT * FROM subscribers WHERE email = ?').get(data.email);
-    if (sub) {
-      db.prepare(`UPDATE subscribers SET phone=?, stripe_customer=?, stripe_sub=?, status='active', notify_sms=?, categories=? WHERE id=?`)
-        .run(data.phone, session.customer, session.subscription, data.sms ? 1 : 0, data.categories, sub.id);
-      db.prepare('DELETE FROM zones WHERE subscriber_id = ?').run(sub.id);
-    } else {
-      const info = db.prepare(`INSERT INTO subscribers (email, phone, token, stripe_customer, stripe_sub, status, notify_email, notify_sms, categories, created_at)
-        VALUES (?, ?, ?, ?, ?, 'active', 1, ?, ?, ?)`)
-        .run(data.email, data.phone, newToken(), session.customer, session.subscription, data.sms ? 1 : 0, data.categories, Date.now());
-      sub = { id: info.lastInsertRowid };
-    }
-    const z = data.zone;
-    db.prepare('INSERT INTO zones (subscriber_id, label, address, lat, lng, radius_mi) VALUES (?, ?, ?, ?, ?, ?)')
-      .run(sub.id, z.label, z.address, z.lat, z.lng, z.radius);
-    db.prepare('DELETE FROM pending WHERE token = ?').run(pendingToken);
-    return db.prepare('SELECT * FROM subscribers WHERE id = ?').get(sub.id);
-  });
-  const sub = tx();
-
-  sendEmail(sub.email, `Your ${SITE_NAME} alerts are on`,
-    `You'll get an alert when a police, fire, medical or traffic call is dispatched inside your alert area.\n\n` +
-    `Save this link to change your address, radius, or alert types, or to cancel:\n${BASE_URL}/manage/${sub.token}\n\n` +
-    `This service is informational only and can be delayed by several minutes. In an emergency, call 9-1-1.`).catch(() => {});
+  if (!prev || prev.status !== 'active') {
+    await sendEmail(sub.email, `Your ${SITE_NAME} alerts are on`,
+      `You'll get an alert when a police, fire, medical or traffic call is dispatched inside your alert area.\n\n` +
+      `Save this link to change your address, radius or alert types, or to cancel:\n${BASE_URL}/manage/${token}\n\n` +
+      `Alerts can be delayed by several minutes. In an emergency, call 9-1-1.`).catch(() => {});
+  }
+  await pendingStore().delete(pendingToken);
   return sub;
 }
 
-export function setStatusBySub(subId, status) {
-  db.prepare('UPDATE subscribers SET status = ? WHERE stripe_sub = ?').run(status, subId);
+export async function setStatusByStripeSub(stripeSubId, status) {
+  const t = await tokenForStripeSub(stripeSubId);
+  const s = t && (await getSub(t));
+  if (s) { s.status = status; await saveSub(s); }
 }

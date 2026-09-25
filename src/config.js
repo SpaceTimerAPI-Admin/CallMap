@@ -1,5 +1,5 @@
 export const SITE_NAME = process.env.SITE_NAME || 'Orlando Call Map';
-export const BASE_URL = (process.env.BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
+export const BASE_URL = (process.env.BASE_URL || process.env.URL || 'http://localhost:8888').replace(/\/$/, '');
 export const POLL_MINUTES = Math.max(1, Number(process.env.POLL_MINUTES || 5));
 export const ACTIVE_WINDOW_MIN = 45;
 export const ACTIVE_WINDOW_MS = ACTIVE_WINDOW_MIN * 60_000;

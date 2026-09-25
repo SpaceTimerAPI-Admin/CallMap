@@ -1,8 +1,7 @@
 // Server-side rendering so search engines see real content (call lists, area names) without running JS.
-import fs from 'node:fs';
+import tpl from './template.js';
 import { SITE_NAME, BASE_URL, AREAS, ACTIVE_WINDOW_MIN, POLL_MINUTES, TILE_URL, TILE_ATTRIBUTION, miles } from './config.js';
 
-const tpl = fs.readFileSync(new URL('../views/page.html', import.meta.url), 'utf8');
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmt = (ms) => new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit' }).format(ms);

@@ -7,7 +7,7 @@
     $('lost').hidden = false;
     $('resend').addEventListener('submit', async (e) => {
       e.preventDefault();
-      await fetch('/api/manage/resend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: $('r-email').value.trim() }) });
+      await fetch('/api/resend-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: $('r-email').value.trim() }) });
       $('r-msg').className = 'msg ok';
       $('r-msg').textContent = 'If that email has alerts, a manage link is on its way.';
     });

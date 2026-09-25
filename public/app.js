@@ -71,7 +71,7 @@
 
   function item(c) {
     const li = document.createElement('li');
-    li.className = 'call' + (c.lat == null ? ' unmapped' : '') + (c.id === selected ? ' is-selected' : '');
+    li.className = 'call' + (c.lat == null ? (c.locating ? ' locating' : ' unmapped') : '') + (c.id === selected ? ' is-selected' : '');
     li.dataset.cat = c.category; li.dataset.id = c.id; li.tabIndex = 0;
     li.style.setProperty('--life', life(c).toFixed(3));
     const cat = document.createElement('span'); cat.className = 'call-cat'; cat.textContent = LABEL[c.category];

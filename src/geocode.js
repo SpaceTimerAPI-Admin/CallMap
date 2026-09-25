@@ -46,12 +46,19 @@ async function census(oneLine) {
   return m ? { lat: m.coordinates.y, lng: m.coordinates.x } : null;
 }
 
+// OpenStreetMap services allow ~1 request/second. Requests queue up single-file even when
+// several lookups run at once (Census lookups, below, run in parallel).
 let lastOsm = 0;
-async function osmThrottle() {
-  const wait = 1100 - (Date.now() - lastOsm);
-  if (wait > remaining() - 1000) throw new Error('out of time');
-  if (wait > 0) await sleep(wait);
-  lastOsm = Date.now();
+let osmQueue = Promise.resolve();
+function osmThrottle() {
+  const turn = osmQueue.then(async () => {
+    const wait = 1100 - (Date.now() - lastOsm);
+    if (wait > remaining() - 1000) throw new Error('out of time');
+    if (wait > 0) await sleep(wait);
+    lastOsm = Date.now();
+  });
+  osmQueue = turn.catch(() => {});
+  return turn;
 }
 
 async function nominatim(q) {

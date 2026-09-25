@@ -8,8 +8,8 @@ export default async () => {
   return json({
     serverTime: Date.now(), lastPollAt: state.lastRun || null,
     nextPollAt: Math.ceil(Date.now() / step) * step, windowMin: ACTIVE_WINDOW_MIN,
-    calls: calls.map(({ id, agency, agency_name, category, type, address, lat, lng, received_at, first_seen }) =>
-      ({ id, agency, agency_name, category, type, address, lat, lng, received_at, first_seen })),
+    calls: calls.map(({ id, agency, agency_name, category, type, address, lat, lng, received_at, first_seen, geo }) =>
+      ({ id, agency, agency_name, category, type, address, lat, lng, received_at, first_seen, locating: geo === 'todo' })),
   }, 200, cdn(30));
 };
 

@@ -7,6 +7,8 @@ import { processAlerts } from './alerts.js';
 import { setDeadline, clearDeadline } from './deadline.js';
 import { kv, recentCalls, saveRecentCalls, getState, saveState, pendingStore } from './store.js';
 
+const isIntersection = (c) => (/[\/&@]|\bAND\b/.test(c.raw_address || '') ? 1 : 0);
+
 export async function runPoll({ budgetMs = 24_000, report: out } = {}) {
   const start = Date.now();
   setDeadline(start + budgetMs);
@@ -56,14 +58,20 @@ export async function runPoll({ budgetMs = 24_000, report: out } = {}) {
     report.step = 'placing calls on the map';
 
     // 2. Place calls on the map, newest first, until the time budget runs out
-    const todo = recent.filter((c) => c.geo === 'todo').sort((a, b) => b.first_seen - a.first_seen);
-    for (const c of todo) {
-      if (timeLeft() < 6_000) break;
-      const p = await geocodeCall({ address: c.raw_address, zip: c.zip, city: c.city, district: c.district });
-      if (p === false) { c.tries = (c.tries || 0) + 1; if (c.tries >= 4) c.geo = 'none'; continue; } // temporary failure: retry next run, give up after 4
-      if (p) { c.lat = p.lat; c.lng = p.lng; c.geo = 'ok'; report.placedOnMap++; } else c.geo = 'none';
-      if (report.placedOnMap % 10 === 0) await saveRecentCalls(recent); // keep progress if the run gets cut off
-    }
+    // Street addresses go first (fast, parallel); intersections use the slower single-file service.
+    const todo = recent.filter((c) => c.geo === 'todo')
+      .sort((a, b) => (isIntersection(a) - isIntersection(b)) || (b.first_seen - a.first_seen));
+    let next = 0, sinceSave = 0;
+    const worker = async () => {
+      while (next < todo.length && timeLeft() > 4_000) {
+        const c = todo[next++];
+        const p = await geocodeCall({ address: c.raw_address, zip: c.zip, city: c.city, district: c.district });
+        if (p === false) { c.tries = (c.tries || 0) + 1; if (c.tries >= 4) c.geo = 'none'; continue; } // temporary failure: retry next run
+        if (p) { c.lat = p.lat; c.lng = p.lng; c.geo = 'ok'; report.placedOnMap++; } else c.geo = 'none';
+        if (++sinceSave >= 10) { sinceSave = 0; await saveRecentCalls(recent); } // keep progress if cut off
+      }
+    };
+    await Promise.all(Array.from({ length: 6 }, worker));
     report.waitingForLocation = recent.filter((c) => c.geo === 'todo').length;
     report.step = 'sending alerts';
     await saveRecentCalls(recent);

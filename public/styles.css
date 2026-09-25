@@ -66,6 +66,7 @@ h2 { font: 600 1.35rem/1.15 var(--display); margin: 0 0 8px; }
 .call-meta { grid-column: 1 / -1; font-size: .82rem; color: var(--muted); }
 .call-age { font-variant-numeric: tabular-nums; }
 .call.unmapped .call-addr::after { content: " (not on map)"; color: var(--muted); font-size: .8rem; }
+.call.locating .call-addr::after { content: " (finding location)"; color: var(--muted); font-size: .8rem; }
 .empty { padding: 18px 0; color: var(--muted); }
 
 .pitch { background: var(--lake-2); border-left: 4px solid var(--citrus); padding: 16px; margin: 0 0 28px; border-radius: 0 8px 8px 0; }

@@ -31,7 +31,7 @@ export default async (req, context) => {
     if (!cats.length) return json({ error: 'Choose at least one type of call.' }, 400);
     if (!Array.isArray(zones) || !zones.length || zones.length > MAX_ZONES) return json({ error: `Keep between 1 and ${MAX_ZONES} places.` }, 400);
     const clean = zones.map((z) => ({ label: String(z.label || '').slice(0, 30), address: String(z.address || '').slice(0, 200), lat: +z.lat, lng: +z.lng, radius: clampRadius(z.radius) }));
-    if (clean.some((z) => !inOrangeCounty(z))) return json({ error: 'Each place must be in Orange County, FL. Tap Find after changing an address.' }, 400);
+    if (clean.some((z) => !inOrangeCounty(z))) return json({ error: 'Each place must be in the Orlando area. Tap Find after changing an address.' }, 400);
     Object.assign(s, { phone: ph, notify_email: !!notify_email, notify_sms: !!notify_sms, categories: cats, zones: clean });
     await saveSub(s);
     return json({ ok: true });

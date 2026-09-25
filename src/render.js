@@ -18,23 +18,23 @@ function callItem(c) {
 
 export function renderPage({ calls, area }) {
   const list = area ? calls.filter((c) => c.lat != null && miles(area, c) <= area.r) : calls;
-  const place = area ? `${area.name}, FL` : 'Orange County, FL';
+  const place = area ? `${area.name}, Orlando, FL` : 'Orlando, FL';
   const title = area
-    ? `${area.name} FL Active Police, Fire & EMS Calls – Live Map | ${SITE_NAME}`
-    : `Orange County FL Live Police, Fire & EMS Calls Map | ${SITE_NAME}`;
+    ? `${area.name} Active Police, Fire & EMS Calls – Live Map | ${SITE_NAME}`
+    : `Orlando FL Live Police, Fire & EMS Calls Map | ${SITE_NAME}`;
   const description = area
-    ? `Live map of active police, fire, medical and traffic calls in ${area.name}, Florida. Updated every ${POLL_MINUTES} minutes from official dispatch feeds. Get alerts for your address.`
-    : `See active 911 police, fire, medical and traffic calls across Orlando and Orange County, Florida on a live map, updated every ${POLL_MINUTES} minutes. Get alerts near your home.`;
+    ? `Live map of active police, fire, medical and traffic calls in ${area.name}, Orlando, Florida. Updated every ${POLL_MINUTES} minutes from official dispatch feeds. Get alerts for your address.`
+    : `See active 911 police, fire, medical and traffic calls across Orlando, Florida on a live map, updated every ${POLL_MINUTES} minutes. Get alerts near your home.`;
   const canonical = area ? `${BASE_URL}/area/${area.slug}` : `${BASE_URL}/`;
-  const h1 = area ? `Active calls in ${area.name}` : 'Active calls in Orange County';
-  const intro = `Police, fire, medical and traffic calls dispatched in ${place} over the last ${ACTIVE_WINDOW_MIN} minutes, from official agency feeds.`;
+  const h1 = area ? `Active calls in ${area.name}` : 'Active calls in Orlando';
+  const intro = `Police, fire, medical and traffic calls dispatched in ${place} over the last ${ACTIVE_WINDOW_MIN} minutes, from the Orlando Police and Orlando Fire departments.`;
 
   const jsonld = [
     { '@context': 'https://schema.org', '@type': 'WebSite', name: SITE_NAME, url: `${BASE_URL}/` },
     { '@context': 'https://schema.org', '@type': 'WebPage', name: title, description, url: canonical,
       about: { '@type': 'Place', name: place, geo: { '@type': 'GeoCoordinates', latitude: area?.lat ?? 28.5384, longitude: area?.lng ?? -81.3789 } } },
     area && { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Orange County', item: `${BASE_URL}/` },
+      { '@type': 'ListItem', position: 1, name: 'Orlando', item: `${BASE_URL}/` },
       { '@type': 'ListItem', position: 2, name: area.name, item: canonical } ] },
   ].filter(Boolean);
 

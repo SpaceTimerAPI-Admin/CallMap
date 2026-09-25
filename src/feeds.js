@@ -5,13 +5,12 @@ import { timeout } from './deadline.js';
 
 const xml = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '', textNodeName: '_text', parseTagValue: false });
 
+// City of Orlando only (Orlando Police + Orlando Fire). Both give block-level locations.
 export const FEEDS = [
   { agency: 'OPD', name: 'Orlando Police', category: 'police', city: 'Orlando',
     url: process.env.OPD_FEED_URL ?? 'https://www1.cityoforlando.net/opd/activecalls/activecadpolice.xml' },
   { agency: 'OFD', name: 'Orlando Fire', category: 'medical', city: 'Orlando',
     url: process.env.OFD_FEED_URL ?? 'https://www1.cityoforlando.net/opd/activecalls/activecadfire.xml' },
-  { agency: 'OCSO', name: 'Orange County Sheriff', category: 'police', city: '',
-    url: process.env.OCSO_FEED_URL || '' },
 ].filter((f) => f.url);
 
 // Field-name candidates seen across CAD feeds (matched case-insensitively)

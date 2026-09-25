@@ -24,7 +24,7 @@ export default async (req) => {
   }
 
   const p = await geocodeUserAddress(zone?.address);
-  if (!p) return json({ error: 'We couldn’t place that address in Orange County, FL.' }, 422);
+  if (!p) return json({ error: 'We couldn’t place that address in the Orlando area.' }, 422);
 
   const token = newToken();
   await pendingStore().setJSON(token, {

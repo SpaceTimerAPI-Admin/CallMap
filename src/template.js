@@ -17,7 +17,7 @@ export default `<!doctype html>
 <meta property="og:image" content="{{BASE_URL}}/og.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="geo.region" content="US-FL">
-<meta name="geo.placename" content="Orlando, Orange County, Florida">
+<meta name="geo.placename" content="Orlando, Florida">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -59,7 +59,7 @@ export default `<!doctype html>
       <ul>{{AREA_LINKS}}</ul>
     </nav>
     <footer class="fine">
-      <p>Locations are approximate and shown as released by each agency. Not affiliated with the Orange County Sheriff's Office or the City of Orlando. For emergencies, call 9-1-1.</p>
+      <p>Locations are approximate and shown as released by each agency. Covers the City of Orlando only. Not affiliated with the City of Orlando, Orlando Police Department or Orlando Fire Department. For emergencies, call 9-1-1.</p>
       <p><a href="/terms">Terms</a> <a href="/privacy">Privacy</a> <a href="/manage">Manage my alerts</a></p>
     </footer>
   </aside>

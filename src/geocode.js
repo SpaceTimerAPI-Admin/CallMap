@@ -94,7 +94,6 @@ function expandForSearch(addr) {
 
 // Geocode a dispatch location (block address or intersection)
 export async function geocodeCall({ address, zip, city, district }) {
-  if (!city && /^APK/i.test(district || '')) city = 'Apopka';
   const addr = cleanAddress(address);
   if (!addr) return null;
   const key = `${addr}|${zip || city || ''}`;
@@ -110,7 +109,7 @@ export async function geocodeCall({ address, zip, city, district }) {
     } else {
       const where = zip ? `FL ${zip}` : `${city || 'Orlando'}, FL`;
       p = await census(`${addr}, ${where}`);
-      if (!p) p = await nominatim(`${expandForSearch(addr)}, ${city || 'Orange County'}, Florida`);
+      if (!p) p = await nominatim(`${expandForSearch(addr)}, ${city || 'Orlando'}, Florida`);
     }
   } catch (e) {
     console.warn('[geocode]', addr, e.message);

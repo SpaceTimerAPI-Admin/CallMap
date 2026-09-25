@@ -1,6 +1,6 @@
 # Orlando Call Map (Netlify version)
 
-Live map of police, fire, medical and traffic calls in Orlando and Orange County, FL, with $10/month radius alerts by text and email.
+Live map of police, fire, medical and traffic calls inside Orlando city limits, with $10/month radius alerts by text and email.
 
 ## How it runs on Netlify
 
@@ -31,17 +31,18 @@ Scheduled functions only run on your published production site, not on preview d
 
 Netlify's Free plan has hard monthly limits, and when you run out the site pauses until the next month. Polling every 5 minutes plus normal visitor traffic uses a steady amount of compute, so for a paid service use the **Personal** or **Pro** plan with auto-recharge turned on. Watch Usage & billing for the first couple of weeks to see your real usage. The pages are cached at Netlify's edge for 30–60 seconds, which keeps function usage low even when many people visit at once.
 
-## Data sources (do this first)
+## Data sources
 
-| Agency | Variable | Status |
-|---|---|---|
-| Orlando Police | `OPD_FEED_URL` | Default is the city's public XML feed. Confirm it opens in a browser. |
-| Orlando Fire | `OFD_FEED_URL` | Same. |
-| Orange County Sheriff | `OCSO_FEED_URL` | You must find this. On a computer, open https://www.ocso.com/calls-for-service/, press F12, open the Network tab, reload, and find the request that returns the list of calls. Paste its URL. |
+The site covers the City of Orlando only, using two public feeds that give block-level locations:
 
-The parser auto-detects XML or JSON and common field names. If a feed uses unusual names, add them to `FIELD` in `src/feeds.js`.
+| Agency | Variable |
+|---|---|
+| Orlando Police | `OPD_FEED_URL` (default: the city's public XML feed) |
+| Orlando Fire | `OFD_FEED_URL` (default: the city's public XML feed) |
 
-Before charging money, email each agency's public-information office to let them know you're republishing their feed, so your requests don't get blocked.
+Before charging money, email the city's public-information office to let them know you're republishing the feeds, so your requests don't get blocked.
+
+To expand beyond city limits later, add another feed to `FEEDS` in `src/feeds.js`. The parser already reads XML, JSON and HTML tables.
 
 ## Payments (Stripe)
 
@@ -63,13 +64,13 @@ The default OpenStreetMap tiles are fine for testing, but their usage policy doe
 
 ## Search engines
 
-Built in: server-rendered pages with the live call list, unique titles and descriptions, canonical URLs, social preview tags, structured data, `/sitemap.xml`, `/robots.txt`, and 15 neighborhood pages.
+Built in: server-rendered pages with the live call list, unique titles and descriptions, canonical URLs, social preview tags, structured data, `/sitemap.xml`, `/robots.txt`, and 12 Orlando neighborhood pages (Downtown, College Park, Lake Nona, MetroWest and others).
 
 After launch:
 1. Add the site to Google Search Console and Bing Webmaster Tools and submit `https://yourdomain.com/sitemap.xml`.
 2. Add `public/og.png` (1200×630) for link previews.
 3. Get a few local links: Orlando subreddits, neighborhood Facebook groups, Nextdoor, HOA newsletters.
-4. Add more neighborhoods in `AREAS` in `src/config.js`.
+4. Add more Orlando neighborhoods in `AREAS` in `src/config.js` (for example Vista Park, Dover Shores, Lake Fairview). The center points are approximate; adjust them if a neighborhood page shows too few or too many calls.
 
 ## Local development (optional)
 
@@ -83,7 +84,7 @@ npx netlify dev          # http://localhost:8888
 ## Before launch checklist
 
 - [ ] Lawyer reviews `public/terms.html` and `public/privacy.html`
-- [ ] `/api/health` shows every feed working
+- [ ] `/api/poll-now` shows both Orlando feeds working
 - [ ] Paid map tiles configured
 - [ ] Stripe live keys, price, webhook and customer portal
 - [ ] Email with SPF/DKIM; Twilio registration approved

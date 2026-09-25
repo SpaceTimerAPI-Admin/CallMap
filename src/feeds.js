@@ -1,6 +1,7 @@
 // Fetches and normalizes public "active calls" feeds (XML or JSON) into one shape.
 import { XMLParser } from 'fast-xml-parser';
 import crypto from 'node:crypto';
+import { timeout } from './deadline.js';
 
 const xml = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '', textNodeName: '_text', parseTagValue: false });
 
@@ -117,10 +118,10 @@ const title = (s) => s.toLowerCase().replace(/\b([a-z])/g, (c) => c.toUpperCase(
 
 export async function fetchFeed(feed) {
   const res = await fetch(feed.url, {
-    headers: { 'User-Agent': `${process.env.SITE_NAME || 'Orlando Call Map'} (${process.env.CONTACT_EMAIL || 'admin'})`, Accept: 'application/json, application/xml, text/xml, */*' },
-    signal: AbortSignal.timeout(20_000),
+    headers: { 'User-Agent': `Mozilla/5.0 (compatible; ${(process.env.SITE_NAME || 'OrlandoCallMap').replace(/\s+/g, '')}/1.0; +${process.env.URL || ''})`, Accept: 'application/json, application/xml, text/xml, text/html, */*' },
+    signal: timeout(10_000),
   });
-  if (!res.ok) throw new Error(`${feed.agency} feed HTTP ${res.status}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const text = await res.text();
   const trimmed = text.replace(/^\uFEFF/, '').trim();
   let records;

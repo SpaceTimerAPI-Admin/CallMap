@@ -2,6 +2,7 @@
 // Intersections ("COLONIAL DR / MILLS AV"): OpenStreetMap Overpass (finds the node both roads share).
 import { geoStore, hash } from './store.js';
 import { OC_BBOX, inOrangeCounty } from './config.js';
+import { timeout, remaining } from './deadline.js';
 
 const UA = `${process.env.SITE_NAME || 'Orlando Call Map'} (${process.env.CONTACT_EMAIL || 'admin@example.com'})`;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -39,21 +40,26 @@ const reEsc = (s) => s.replace(/[.*+?^${}()|[\]\\"]/g, '\\$&');
 async function census(oneLine) {
   const u = new URL('https://geocoding.geo.census.gov/geocoder/locations/onelineaddress');
   u.search = new URLSearchParams({ address: oneLine, benchmark: 'Public_AR_Current', format: 'json' });
-  const r = await fetch(u, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(15_000) });
+  const r = await fetch(u, { headers: { 'User-Agent': UA }, signal: timeout(8_000) });
   if (!r.ok) throw new Error(`HTTP ${r.status}`); // busy/rate-limited: retry later, don't cache as 'not found'
   const m = (await r.json())?.result?.addressMatches?.[0];
   return m ? { lat: m.coordinates.y, lng: m.coordinates.x } : null;
 }
 
 let lastOsm = 0;
-async function osmThrottle() { const wait = 1100 - (Date.now() - lastOsm); if (wait > 0) await sleep(wait); lastOsm = Date.now(); }
+async function osmThrottle() {
+  const wait = 1100 - (Date.now() - lastOsm);
+  if (wait > remaining() - 1000) throw new Error('out of time');
+  if (wait > 0) await sleep(wait);
+  lastOsm = Date.now();
+}
 
 async function nominatim(q) {
   await osmThrottle();
   const u = new URL('https://nominatim.openstreetmap.org/search');
   u.search = new URLSearchParams({ q, format: 'json', limit: '1', countrycodes: 'us', bounded: '1',
     viewbox: `${OC_BBOX.minLng},${OC_BBOX.maxLat},${OC_BBOX.maxLng},${OC_BBOX.minLat}` });
-  const r = await fetch(u, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(15_000) });
+  const r = await fetch(u, { headers: { 'User-Agent': UA }, signal: timeout(8_000) });
   if (!r.ok) throw new Error(`HTTP ${r.status}`); // busy/rate-limited: retry later, don't cache as 'not found'
   const j = await r.json();
   return j[0] ? { lat: +j[0].lat, lng: +j[0].lon } : null;
@@ -62,13 +68,13 @@ async function nominatim(q) {
 async function intersection(a, b) {
   await osmThrottle();
   const bb = `${OC_BBOX.minLat},${OC_BBOX.minLng},${OC_BBOX.maxLat},${OC_BBOX.maxLng}`;
-  const q = `[out:json][timeout:20];
+  const q = `[out:json][timeout:8];
 way["highway"]["name"~"${reEsc(streetCore(a))}",i](${bb})->.a;
 way["highway"]["name"~"${reEsc(streetCore(b))}",i](${bb})->.b;
 node(w.a)(w.b);out 1;`;
   const r = await fetch('https://overpass-api.de/api/interpreter', {
     method: 'POST', headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'data=' + encodeURIComponent(q), signal: AbortSignal.timeout(25_000),
+    body: 'data=' + encodeURIComponent(q), signal: timeout(10_000),
   });
   if (!r.ok) throw new Error(`HTTP ${r.status}`); // busy/rate-limited: retry later, don't cache as 'not found'
   const n = (await r.json())?.elements?.[0];

@@ -4,24 +4,34 @@
 import { FEEDS, fetchFeed, displayAddress } from './feeds.js';
 import { geocodeCall } from './geocode.js';
 import { processAlerts } from './alerts.js';
+import { setDeadline, clearDeadline } from './deadline.js';
 import { kv, recentCalls, saveRecentCalls, getState, saveState, pendingStore } from './store.js';
 
-export async function runPoll({ budgetMs = 24_000 } = {}) {
+export async function runPoll({ budgetMs = 24_000, report: out } = {}) {
   const start = Date.now();
+  setDeadline(start + budgetMs);
   const timeLeft = () => budgetMs - (Date.now() - start);
   const meta = kv('meta');
   const lock = await meta.get('lock', { type: 'json' });
   if (lock && Date.now() - lock.at < 60_000) return { skipped: 'another poll is running' };
   await meta.setJSON('lock', { at: Date.now() });
 
-  const report = { feeds: {}, newCalls: 0, placedOnMap: 0, waitingForLocation: 0, alertsSent: 0 };
+  const report = Object.assign(out || {}, { feeds: {}, newCalls: 0, placedOnMap: 0, waitingForLocation: 0, alertsSent: 0, step: 'fetching feeds' });
   try {
     const state = await getState();
     let recent = await recentCalls();
     const known = new Set(recent.map((c) => c.id));
 
     // 1. Fetch every feed at once
-    const results = await Promise.allSettled(FEEDS.map((f) => fetchFeed(f)));
+    const results = await Promise.allSettled(FEEDS.map(async (f) => {
+      const t0 = Date.now();
+      try { return { calls: await fetchFeed(f), ms: Date.now() - t0 }; }
+      catch (e) {
+        const msg = e.name === 'TimeoutError' || e.name === 'AbortError' ? `no response after ${Math.round((Date.now() - t0) / 1000)}s`
+          : (e.cause?.code || e.message);
+        throw new Error(msg);
+      }
+    }));
     results.forEach((r, i) => {
       const feed = FEEDS[i];
       if (r.status === 'rejected') {
@@ -31,8 +41,8 @@ export async function runPoll({ budgetMs = 24_000 } = {}) {
       }
       state.lastOk[feed.agency] = Date.now();
       delete state.lastError[feed.agency];
-      report.feeds[feed.agency] = { ok: true, callsInFeed: r.value.length };
-      for (const c of r.value) {
+      report.feeds[feed.agency] = { ok: true, callsInFeed: r.value.calls.length, seconds: +(r.value.ms / 1000).toFixed(1) };
+      for (const c of r.value.calls) {
         if (known.has(c.id)) continue;
         known.add(c.id);
         recent.push({ ...c, raw_address: c.address, address: displayAddress(c.address), first_seen: Date.now(), geo: c.lat != null ? 'ok' : 'todo', alerted: false });
@@ -41,6 +51,9 @@ export async function runPoll({ budgetMs = 24_000 } = {}) {
     });
     recent = recent.filter((c) => c.first_seen > Date.now() - 86_400_000);
     await saveRecentCalls(recent); // list shows up immediately, even before pins are placed
+    state.lastRun = Date.now();
+    await saveState(state);
+    report.step = 'placing calls on the map';
 
     // 2. Place calls on the map, newest first, until the time budget runs out
     const todo = recent.filter((c) => c.geo === 'todo').sort((a, b) => b.first_seen - a.first_seen);
@@ -49,8 +62,10 @@ export async function runPoll({ budgetMs = 24_000 } = {}) {
       const p = await geocodeCall({ address: c.raw_address, zip: c.zip, city: c.city, district: c.district });
       if (p === false) { c.tries = (c.tries || 0) + 1; if (c.tries >= 4) c.geo = 'none'; continue; } // temporary failure: retry next run, give up after 4
       if (p) { c.lat = p.lat; c.lng = p.lng; c.geo = 'ok'; report.placedOnMap++; } else c.geo = 'none';
+      if (report.placedOnMap % 10 === 0) await saveRecentCalls(recent); // keep progress if the run gets cut off
     }
     report.waitingForLocation = recent.filter((c) => c.geo === 'todo').length;
+    report.step = 'sending alerts';
     await saveRecentCalls(recent);
     state.lastRun = Date.now();
     await saveState(state);
@@ -71,10 +86,12 @@ export async function runPoll({ budgetMs = 24_000 } = {}) {
         if (!p || Date.now() - p.created_at > 86_400_000) await ps.delete(b.key);
       }
     }
+    report.step = 'done';
     report.seconds = Math.round((Date.now() - start) / 100) / 10;
     console.log('[poll]', JSON.stringify(report));
     return report;
   } finally {
+    clearDeadline();
     await meta.delete('lock');
   }
 }

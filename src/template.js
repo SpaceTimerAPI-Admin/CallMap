@@ -49,6 +49,15 @@ export default `<!doctype html>
     <ol class="call-list" id="call-list">
 {{CALLS_HTML}}
     </ol>
+    <section class="notes" aria-labelledby="notes-h">
+      <h2 id="notes-h">Important notes</h2>
+      <ul>
+        <li>Most information, especially about law enforcement activity, comes from dispatch logs, which are based on initial reports from callers and others at the location. These reports can be vague or unrelated to what is actually taking place.</li>
+        <li>All information is only what the departments themselves decide to release. Some calls, such as those related to domestic violence and other sensitive crimes, are intentionally redacted.</li>
+        <li>Pins are placed from the block-level location each department releases, using public address-lookup services, so a pin may be a block or more from the actual scene.</li>
+        <li>This site covers the City of Orlando only. Calls handled by the Orange County Sheriff's Office or neighboring cities such as Winter Park aren't included, so areas just outside city limits may look quiet even when they aren't.</li>
+      </ul>
+    </section>
     <section class="pitch">
       <h2>Know when something happens on your street</h2>
       <p>Pick an address and a radius. We'll text or email you when police, fire or rescue is dispatched inside it. $10 a month, cancel anytime.</p>

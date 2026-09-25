@@ -12,7 +12,15 @@ const SUFFIX = { AV: 'Avenue', AVE: 'Avenue', DR: 'Drive', ST: 'Street', RD: 'Ro
 const DIR = { N: 'North', S: 'South', E: 'East', W: 'West' };
 
 export function cleanAddress(raw) {
-  return String(raw || '').toUpperCase()
+  let a = String(raw || '').toUpperCase().trim();
+  const range = a.match(/^\[\s*(\d+)\s*-\s*(\d+)\s*\]\s*(.+)$/);
+  if (range) {
+    const lo = +range[1], hi = +range[2];
+    const mid = Math.max(1, Math.round((lo + hi) / 2 / 100) * 100);
+    a = `${mid} ${range[3]}`;
+  }
+  if (/^\[\s*UNK\s*\]/.test(a)) return ''; // street only, no block: a pin could be miles off, so list it without a pin
+  return a
     .replace(/\bBLOCK OF\b|\bBLK\b|\bBLOCK\b/g, ' ')
     .replace(/\s+/g, ' ').trim();
 }
@@ -72,7 +80,8 @@ function expandForSearch(addr) {
 }
 
 // Geocode a dispatch location (block address or intersection)
-export async function geocodeCall({ address, zip, city }) {
+export async function geocodeCall({ address, zip, city, district }) {
+  if (!city && /^APK/i.test(district || '')) city = 'Apopka';
   const addr = cleanAddress(address);
   if (!addr) return null;
   const key = `${addr}|${zip || city || ''}`;

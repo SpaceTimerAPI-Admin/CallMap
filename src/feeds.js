@@ -16,9 +16,10 @@ export const FEEDS = [
 // Field-name candidates seen across CAD feeds (matched case-insensitively)
 const FIELD = {
   id: ['incident', 'incidentnumber', 'incident_number', 'id', 'callnumber', 'call_number', 'eventnumber', 'event', 'cfsnumber', 'casenumber'],
-  type: ['desc', 'description', 'type', 'calltype', 'call_type', 'nature', 'incidenttype', 'incident_type', 'problem'],
+  type: ['desc', 'description', 'type', 'calltype', 'call_type', 'nature', 'incidenttype', 'incident_type', 'problem', 'incidentdescription', 'calldescription'],
   address: ['location', 'address', 'block', 'blockaddress', 'street', 'streetaddress'],
   zip: ['zip', 'zipcode', 'zip_code'],
+  district: ['reportingdistrict', 'reporting_district', 'district', 'rd'],
   time: ['date', 'entrytime', 'entry_time', 'calltime', 'call_time', 'received', 'receivedtime', 'datetime', 'dispatchtime', 'createdate', 'time'],
   lat: ['lat', 'latitude'],
   lng: ['lng', 'lon', 'long', 'longitude'],
@@ -79,6 +80,31 @@ export function categorize(type, fallback) {
   return fallback;
 }
 
+// Some agencies publish an HTML table instead of XML/JSON. Header text becomes the field name
+// ("Reporting District" -> "reportingdistrict"), so the same field matching works.
+const decode = (t) => t.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+  .replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/\s+/g, ' ').trim();
+export function parseHtmlTable(htmlText) {
+  let best = [];
+  for (const [table] of htmlText.matchAll(/<table[\s\S]*?<\/table>/gi)) {
+    const headers = [...table.matchAll(/<th[^>]*>([\s\S]*?)<\/th>/gi)].map((m) => decode(m[1]).toLowerCase().replace(/[^a-z0-9]/g, ''));
+    if (!headers.length) continue;
+    const rows = [];
+    for (const [, tr] of table.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)) {
+      const cells = [...tr.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map((m) => decode(m[1]));
+      if (cells.length < 2) continue;
+      const rec = {};
+      headers.forEach((h, i) => { if (h && cells[i] !== undefined) rec[h] = cells[i]; });
+      rows.push(rec);
+    }
+    if (rows.length > best.length) best = rows;
+  }
+  return best;
+}
+
+// "[1101 - 3998] E WETHERBEE ROAD" -> "1101-3998 E WETHERBEE ROAD"; "[UNK] BROADWAY" -> "BROADWAY"
+export const displayAddress = (a) => String(a || '').replace(/^\[\s*UNK\s*\]\s*/i, '').replace(/^\[\s*(\d+)\s*-\s*(\d+)\s*\]\s*/, '$1-$2 ').trim();
+
 const title = (s) => s.toLowerCase().replace(/\b([a-z])/g, (c) => c.toUpperCase());
 
 export async function fetchFeed(feed) {
@@ -89,15 +115,20 @@ export async function fetchFeed(feed) {
   if (!res.ok) throw new Error(`${feed.agency} feed HTTP ${res.status}`);
   const text = await res.text();
   const trimmed = text.trim();
-  const data = trimmed.startsWith('{') || trimmed.startsWith('[') ? JSON.parse(trimmed) : xml.parse(trimmed);
-  const records = findRecords(data) || [];
+  let records;
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) records = findRecords(JSON.parse(trimmed)) || [];
+  else if (/<table[\s>]/i.test(trimmed)) records = parseHtmlTable(trimmed);
+  else records = findRecords(xml.parse(trimmed)) || [];
 
   return records.map((r) => {
-    const type = pick(r, FIELD.type);
+    let type = pick(r, FIELD.type);
+    const idRaw = pick(r, FIELD.id);
+    const idLooksLikeText = /[A-Za-z]{3,}\s/.test(idRaw) || /^[A-Za-z /()-]{4,}$/.test(idRaw);
+    if (!type && idLooksLikeText) type = idRaw;
     const address = pick(r, FIELD.address);
     const timeRaw = pick(r, FIELD.time);
     const received_at = parseTime(timeRaw);
-    const rawId = pick(r, FIELD.id) || crypto.createHash('sha1').update(`${type}|${address}|${timeRaw}`).digest('hex').slice(0, 16);
+    const rawId = (!idLooksLikeText && idRaw) || crypto.createHash('sha1').update(`${type}|${address}|${timeRaw}`).digest('hex').slice(0, 16);
     const lat = parseFloat(pick(r, FIELD.lat)), lng = parseFloat(pick(r, FIELD.lng));
     return {
       id: `${feed.agency}-${rawId}`,
@@ -107,6 +138,7 @@ export async function fetchFeed(feed) {
       type: title(type || 'Call for service'),
       address: address.toUpperCase(),
       zip: pick(r, FIELD.zip),
+      district: pick(r, FIELD.district),
       city: feed.city,
       lat: Number.isFinite(lat) && Math.abs(lat) > 1 ? lat : null,
       lng: Number.isFinite(lng) && Math.abs(lng) > 1 ? lng : null,

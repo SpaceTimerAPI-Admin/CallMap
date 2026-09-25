@@ -1,5 +1,5 @@
 // Poll feeds -> store new calls -> geocode -> send alerts. Runs in a background function (15-minute limit).
-import { FEEDS, fetchFeed } from './feeds.js';
+import { FEEDS, fetchFeed, displayAddress } from './feeds.js';
 import { geocodeCall } from './geocode.js';
 import { processAlerts } from './alerts.js';
 import { kv, recentCalls, saveRecentCalls, getState, saveState, pendingStore } from './store.js';
@@ -28,7 +28,8 @@ export async function runPoll() {
             const p = await geocodeCall(c);
             if (p) { c.lat = p.lat; c.lng = p.lng; }
           }
-          const { zip, city, ...keep } = c;
+          const { zip, city, district, ...keep } = c;
+          keep.address = displayAddress(keep.address);
           keep.first_seen = Date.now();
           recent.push(keep);
           fresh.push(keep);
